@@ -1,0 +1,11 @@
+.pytest_cache
+.mypy_cache
+__pycache__/
+debug
+.session.vim
+.null-ls*
+.idea/
+.vscode
+WARP.md
+lab/
+poetry.lock
