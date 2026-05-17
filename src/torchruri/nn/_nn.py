@@ -8,13 +8,13 @@ from . import Layer
 class Module:
     def __init__(self, *args: Any, **kwargs: Any) -> None:
         self._forward_was_override = True
-        self._param: list[tuple[T, T]] = []
+        self._param: list[tuple[T, T] | tuple[T]] = []
 
     def forward(self, *args: Any, **kwargs: Any) -> T:
         self._forward_was_override = False
         return Tensor([])
 
-    def param(self) -> list[tuple[T, T]]:
+    def param(self) -> list[tuple[T, T] | tuple[T]]:
         layers = list(filter(lambda arr: isinstance(arr, Layer), self.__dict__.values()))
         for layer in layers:
             self._param.append(layer.parameters())
@@ -23,15 +23,18 @@ class Module:
 
     def zero_grad(self) -> None:
         for layer in self._param:
-            if len(layer) == 1:
-                (weight_,) = layer
-                weight_.zero_()
-            elif len(layer) == 2:
-                weight_, bias_ = layer
-                weight_.zero_()
-                bias_.zero_()
-            else:
-                raise ValueError("The nn does not contain any layer")
+            match (len(layer)):
+                case 1:
+                    (weight_,) = layer
+                    weight_.zero_()
+
+                case 2:
+                    weight_, bias_ = layer
+                    weight_.zero_()
+                    bias_.zero_()
+
+                case _:
+                    raise ValueError("The nn does not contain any layer")
 
     def __call__(self, *args: Any, **kwargs: Any) -> T:
         _out = self.forward(*args, **kwargs)

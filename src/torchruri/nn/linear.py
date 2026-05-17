@@ -21,7 +21,7 @@ class Linear(Layer):
         self._out = (output_features,)
         self._use_bias = bias
 
-        self._weigths = Tensor(np.random.normal(size=(*self._out, *self._in)), require_grad=True)
+        self.weights = Tensor(np.random.normal(size=(*self._out, *self._in)), require_grad=True)
         if self._use_bias:
             self._bias = Tensor(np.zeros(self._out), require_grad=True)
 
@@ -39,27 +39,27 @@ class Linear(Layer):
         self._bias = value
 
     @property
-    def weigths(self) -> T | None:
-        return self._weigths
+    def weights(self) -> T:
+        return self.weights
 
-    @weigths.setter
-    def weigths(self, value: T) -> None:
-        if value.shape != self._weigths.shape:
-            raise ValueError(f"The weights tensor should be of size {self._weigths.shape}")
-        self._weigths = value
+    @weights.setter
+    def weights(self, value: T) -> None:
+        if value.shape != self.weights.shape:
+            raise ValueError(f"The weights tensor should be of size {self.weights.shape}")
+        self.weights = value
 
-    def forward(self, input: T) -> T:
-        if self._weigths is None:
-            raise ValueError("The 'weigths' attribute was not set.")
+    def forward(self, user_input: T) -> T:
+        if self.weights is None:
+            raise ValueError("The 'weights' attribute was not set.")
 
         if self._use_bias:
-            return input @ self._weigths.T_ + self._bias
+            return user_input @ self.weights.T_ + self._bias
         else:
-            return input @ self._weigths.T_
+            return user_input @ self.weights.T_
 
-    # NOTE: Every layers have a tuple of weigths and bias named "parameters"
+    # NOTE: Every layer have a tuple of weights and bias named "parameters"
     def parameters(self) -> tuple[T | None, T | None]:
-        return self.weigths, self.bias
+        return self.weights, self.bias
 
     def __call__(self, input_: T) -> T:
         if input_.shape[1:] != self._in:

@@ -17,28 +17,31 @@ class ActivationFunction:
 
 
 class ReLU(ActivationFunction):
-    def forward(self, t: T) -> T:
+    @staticmethod
+    def forward(t: T) -> T:
         if not isinstance(t, Tensor):
             raise RuntimeError("relu() can only be called on a tensor")
         return t.max(0)
 
     def __call__(self, t: T) -> T:
-        return self.forward(t)
+        return ReLU.forward(t)
 
 
 class LeakyReLU(ActivationFunction):
-    def forward(self, t: T, negative_slope: Number = 0.1) -> T:
+    @staticmethod
+    def forward(t: T, negative_slope: Number = 0.1) -> T:
         if not isinstance(t, Tensor):
             raise RuntimeError("leaky_relu() can only be called on a tensor")
 
         return t.max(t * negative_slope)
 
     def __call__(self, t: T, negative_slope: Number = 0.1) -> T:
-        return self.forward(t, negative_slope)
+        return LeakyReLU.forward(t, negative_slope)
 
 
 class SoftMax(ActivationFunction):
-    def forward(self, t: T) -> T:
+    @staticmethod
+    def forward(t: T) -> T:
         if not isinstance(t, Tensor):
             raise RuntimeError("leaky_relu() can only be called on a tensor")
 
@@ -48,11 +51,12 @@ class SoftMax(ActivationFunction):
         return uf.exp(t) / (uf.sum(uf.exp(t)))
 
     def __call__(self, t: T) -> T:
-        return self.forward(t)
+        return SoftMax.forward(t)
 
 
 class Sigmoid(ActivationFunction):
-    def forward(self, t: T) -> T:
+    @staticmethod
+    def forward(t: T) -> T:
         if not isinstance(t, Tensor):
             raise RuntimeError("leaky_relu() can only be called on a tensor")
 
@@ -62,4 +66,4 @@ class Sigmoid(ActivationFunction):
         return 1 / (1 + uf.exp(-t))
 
     def __call__(self, t: T) -> T:
-        return self.forward(t)
+        return Sigmoid.forward(t)

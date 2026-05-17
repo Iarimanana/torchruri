@@ -10,4 +10,4 @@ class Layer:
         pass
 
     def parameters(self) -> tuple[T | None, T | None]:
-        return (Tensor([]), Tensor([]))
+        return Tensor([]), Tensor([])

@@ -16,13 +16,13 @@ class Tensor:
 
     def __init__(
         self,
-        object: Iterable[Number] | Number,
+        obj: Iterable[Number] | Number,
         require_grad: bool = False,
         *,
         _init_grad: bool = True,
         **kwargs: Any,
     ):
-        self.tensor = np.array(object, **kwargs)
+        self.tensor = np.array(obj, **kwargs)
         self.shape: tuple[int, ...] = self.tensor.shape
         self.size: int = self.tensor.size
         self.dtype = self.tensor.dtype
@@ -35,10 +35,10 @@ class Tensor:
                 _init_grad=False,
             )
 
+        self.parents: TensorParent = tuple()
         self.is_leaf = True
         self._back_propagate = False
-        self._parents: TensorParent
-        self._grad_fn: Callable[..., None]
+        self._grad_fn: Callable[..., None] = Callable()
         self.require_grad = require_grad
 
     @property
@@ -82,15 +82,16 @@ class Tensor:
 
         self._back_propagate = True
         self.grad = Tensor(np.ones(self.shape), require_grad=True)
-        self.grad_fn(self._parents)
+        self.grad_fn(self.parents)
 
         layer: list[T] = []
-        layer.extend(self._parents)
+        layer.extend(self.parents)
 
         while len(layer) != 0:
             layer = self._backward(layer)
 
-    def _backward(self, layer: list[T]) -> list[T]:
+    @staticmethod
+    def _backward(layer: list[T]) -> list[T]:
         next_layer: list[T] = []
         while len(layer) != 0:
             node = layer.pop()
@@ -98,8 +99,8 @@ class Tensor:
             if node.is_leaf:
                 continue
 
-            node.grad_fn(node._parents)
-            next_layer.extend(node._parents)
+            node.grad_fn(node.parents)
+            next_layer.extend(node.parents)
         return next_layer
 
     @classmethod
@@ -112,10 +113,10 @@ class Tensor:
     ) -> "Tensor":
         if other is None:
             next_node = Tensor(func(t.tensor), require_grad=True)
-            next_node._parents = (t,)
+            next_node.parents = (t,)
         else:
             next_node = Tensor(func(t.tensor, other.tensor), require_grad=True)
-            next_node._parents = (t, other)
+            next_node.parents = (t, other)
         next_node._grad_fn = grad_fn
         next_node.is_leaf = False
         return next_node
@@ -133,8 +134,8 @@ class Tensor:
             return Tensor(u, dtype=self.dtype)
         raise TypeError(f"The type: {type(u)} is not supported by {op_name}")
 
-    def __add__(self, other: "T | Number") -> "T":
-        other = self._check_number_type(other, "__add__")
+    def __add__(self, other_tensor: "T | Number") -> "T":
+        other: "T" = self._check_number_type(other_tensor, "__add__")
         if not self._require_grad or Tensor._no_grad:
             return Tensor(self.tensor + other.tensor)
         return Tensor._new_node(self, np.add, Tensor._add_backward, other)
@@ -164,7 +165,7 @@ class Tensor:
             raise TypeError("Only support number and tensor")
 
         if isinstance(p, NUMBER_RUNTIME):
-            p = Tensor(p, dtype=self.dtype)
+            p: "T" = Tensor(p, dtype=self.dtype)
 
         if not self._require_grad or Tensor._no_grad:
             return Tensor(self.tensor**p.tensor)
@@ -175,7 +176,7 @@ class Tensor:
             raise TypeError("Only support number and tensor")
 
         if isinstance(p, NUMBER_RUNTIME):
-            p = Tensor(p, dtype=self.dtype)
+            p: "T" = Tensor(p, dtype=self.dtype)
 
         if not self._require_grad or Tensor._no_grad:
             return Tensor(self.tensor**p.tensor)
@@ -206,7 +207,7 @@ class Tensor:
         u.grad.tensor += t.grad.tensor * np.ones(u.shape)
 
     def __mul__(self, other: "T | Number") -> "T":
-        other = self._check_number_type(other, "__mul__")
+        other: "T" = self._check_number_type(other, "__mul__")
         if not self._require_grad or Tensor._no_grad:
             return Tensor(self.tensor * other.tensor)
         return Tensor._new_node(self, np.multiply, Tensor._mul_backward, other)
@@ -259,13 +260,13 @@ class Tensor:
         u.grad.tensor += t.grad.tensor * (1 / np.square(np.cos(u.tensor)))
 
     def __sub__(self, other: "T | Number") -> "T":
-        other = self._check_number_type(other, "__sub__")
+        other: "T" = self._check_number_type(other, "__sub__")
         if not self.require_grad or Tensor._no_grad:
             return Tensor(self.tensor - other.tensor)
         return Tensor._new_node(self, np.subtract, Tensor._sub_backward, other)
 
     def __rsub__(self, other: "T | Number") -> "T":
-        other = self._check_number_type(other, "__rsub__")
+        other: "T" = self._check_number_type(other, "__rsub__")
         if not self._require_grad or Tensor._no_grad:
             return Tensor(other.tensor - self.tensor)
         return Tensor._new_node(other, np.subtract, Tensor._sub_backward, self)
@@ -307,19 +308,19 @@ class Tensor:
         u.grad.tensor += t.grad.tensor * 1 / (u.tensor + epsilon)
 
     def __truediv__(self, other: "T | Number") -> "T":
-        other = self._check_number_type(other, "__truediv__")
+        other: "T" = self._check_number_type(other, "__truediv__")
         if not self._require_grad or Tensor._no_grad:
             return Tensor(self.tensor / other.tensor)
         return Tensor._new_node(self, np.true_divide, Tensor._truediv_backward, other)
 
     def __rtruediv__(self, other: "T | Number") -> "T":
-        other = self._check_number_type(other, "__rtruediv__")
+        other: "T" = self._check_number_type(other, "__rtruediv__")
         if not self._require_grad or Tensor._no_grad:
             return Tensor(other.tensor / self.tensor)
         return Tensor._new_node(other, np.divide, Tensor._truediv_backward, self)
 
     @classmethod
-    def _truediv_backward(cls, t: "T", u: "T", v: "T") -> None:
+    def _truediv_backward(cls, global_t: "T", global_u: "T", global_v: "T") -> None:
         epsilon = 1e-30
 
         def u_grad(t: "T", u: "T", v: "T") -> None:
@@ -328,19 +329,19 @@ class Tensor:
         def v_grad(t: "T", u: "T", v: "T") -> None:
             v.grad.tensor += t.grad.tensor * (-u.tensor / (np.square(v.tensor) + epsilon))
 
-        if u.grad.shape == v.grad.shape:
-            u_grad(t, u, v)
-            v_grad(t, u, v)
+        if global_u.grad.shape == global_v.grad.shape:
+            u_grad(global_t, global_u, global_v)
+            v_grad(global_t, global_u, global_v)
 
-        elif not u.grad.shape and v.grad.shape:
-            v_grad(t, u, v)
+        elif not global_u.grad.shape and global_v.grad.shape:
+            v_grad(global_t, global_u, global_v)
 
-        elif u.grad.shape and not v.grad.shape:
-            u_grad(t, u, v)
+        elif global_u.grad.shape and not global_v.grad.shape:
+            u_grad(global_t, global_u, global_v)
 
         else:
-            u_shape = u.grad.shape
-            v_shape = v.grad.shape
+            u_shape = global_u.grad.shape
+            v_shape = global_v.grad.shape
             raise RuntimeError(f"tensor of shape {u_shape} and {v_shape} are incompatible")
 
     def __matmul__(self, other: "T") -> "T":
@@ -351,7 +352,7 @@ class Tensor:
 
     def dot(self, other: "T") -> "T":
         if not isinstance(other, Tensor):
-            raise TypeError("The dot() operation is only supported on tensor object.")
+            raise TypeError("The dot() operation is only supported on tensor obj.")
 
         if (
             self.shape[-1] == other.shape[0]
@@ -396,13 +397,13 @@ class Tensor:
         )
 
     def max(self, other: "T | Number") -> "T":
-        other = self._check_number_type(other, "max")
+        other: "T" = self._check_number_type(other, "max")
         if not self._require_grad or Tensor._no_grad:
             return Tensor(np.maximum(self.tensor, other.tensor))
         return Tensor._new_node(self, np.maximum, Tensor._max_backward, other)
 
     @classmethod
-    def _max_backward(cls, t: "T", u: "T", v: "T") -> None:
+    def _max_backward(cls, t: "T", u: "T") -> None:
         u.grad.tensor += t.grad.tensor * (u.tensor > 0).astype(u.dtype)
 
     def sqrt(self) -> "T":

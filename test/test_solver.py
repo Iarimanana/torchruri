@@ -29,7 +29,8 @@ class TestSolver:
         b = np.random.rand(2048, 2) * 5 + 5
         b_id = np.ones((2048, 2))
 
-        index = np.random.shuffle(np.arange(a.size + b.size))
+        index = np.arange(a + b)
+        np.random.shuffle(index)
         t_point = np.concatenate((a, b), dtype=np.float64)[index]
         label = np.concatenate((a_id, b_id))[index]
 

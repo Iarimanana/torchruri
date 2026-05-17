@@ -3,6 +3,7 @@ from typing import Any, Self
 import numpy as np
 
 from .types import T
+from .auto_grad.tensor import Tensor
 
 
 class DataLoader:
@@ -12,15 +13,14 @@ class DataLoader:
         self.shuffle = shuffle
 
         if len(dataset) != 2:
-            raise TypeError(
-                "The dataset parameter only accept a dataset of traning data and labels"
+            raise TypeError( "The dataset parameter only accept a dataset of traning data and labels"
             )
 
         if self.dataset[0].shape[0] != self.dataset[1].shape[0]:
-            raise Exception("The number of training sample does not match the number of labels.")
+            raise Exception("]The number of training sample does not match the number of labels.")
 
-        self.y: T
-        self.x: T
+        self.y = None
+        self.x = None
 
         self._size = self.dataset[1].shape[0]
         self._current = 0

@@ -20,7 +20,7 @@ class MSELoss(LossFn):
             raise ValueError("A loss function can only be called on a 1D Tensor")
 
         if pred.shape != target.shape:
-            raise ValueError("The shape of the target and the input should be the same")
+            raise ValueError("The shape of the target and the user_input should be the same")
 
         return uf.sum((pred - target) ** 2) / pred.size
 
@@ -30,12 +30,12 @@ class MSELoss(LossFn):
 
 class L1Loss(LossFn):
     @staticmethod
-    def forward(self, target: T, pred: T) -> T:
+    def forward(target: T, pred: T) -> T:
         if len(pred.shape) != 1:
             raise ValueError("A loss function can only be called on a 1D Tensor")
 
         if pred.shape != target.shape:
-            raise ValueError("The shape of the target and the input should be the same")
+            raise ValueError("The shape of the target and the user_input should be the same")
 
         return uf.sum(uf.abs(pred - target)) / pred.size
 
@@ -45,14 +45,14 @@ class L1Loss(LossFn):
 
 class CrossEntropy(LossFn):
     @staticmethod
-    def forward(self, target: T, pred: T) -> T:
+    def forward(target: T, pred: T) -> T:
         if len(pred.shape) != 1:
             raise ValueError("A loss function can only be called on a 1D Tensor")
 
         if pred.shape != target.shape:
-            raise ValueError("The shape of the target and the input should be the same")
+            raise ValueError("The shape of the target and the user_input should be the same")
 
         return uf.sum(target * uf.log(pred))
 
-    def __call__(self, one_encoded_target: T, pred_probaility: T) -> T:
-        return self.forward(one_encoded_target, pred_probaility)
+    def __call__(self, one_encoded_target: T, pred_probability: T) -> T:
+        return self.forward(target=one_encoded_target, pred=pred_probability)

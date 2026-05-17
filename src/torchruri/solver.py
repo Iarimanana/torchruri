@@ -15,7 +15,7 @@ class Optimizer:
 class SGD(Optimizer):
     def __init__(
         self,
-        param: list[tuple[T, T]],
+        param: list[tuple[T, T] | tuple[T]],
         lr: Number = 1e-3,
         momentum: Number = 0,
         nesterov: bool = False,
@@ -27,7 +27,7 @@ class SGD(Optimizer):
 
     def step(self) -> None:
         if not self.nesterov:
-            previous_weight_change: tuple[T, T] = (Tensor(0), Tensor(0))
+            previous_weight_change = (Tensor(0), Tensor(0))
             for layer in self.param:
                 if len(layer) == 1:
                     (w_t,) = layer
@@ -56,15 +56,18 @@ class SGD(Optimizer):
 
     def zero_grad(self) -> None:
         for layer in self.param:
-            if len(layer) == 1:
-                (weight_,) = layer
-                weight_.zero_()
-            elif len(layer) == 2:
-                weight_, bias_ = layer
-                weight_.zero_()
-                bias_.zero_()
-            else:
-                raise ValueError("The nn does not contain any layer")
+            match (len(layer)):
+                case 1:
+                    (weight_,) = layer
+                    weight_.zero_()
+
+                case 2:
+                    weight_, bias_ = layer
+                    weight_.zero_()
+                    bias_.zero_()
+
+                case _:
+                    raise ValueError("The neural network does not contain any layer")
 
 
 class Adam(Optimizer):

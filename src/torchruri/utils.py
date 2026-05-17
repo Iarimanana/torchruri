@@ -12,7 +12,7 @@ class OneHotEncoder:
 
     def forward(self, u: T) -> T:
         if len(u.shape) != 1:
-            raise ValueError("OneHotEncoder does not support tensor other than 1 dim")
+            raise ValueError("OneHotEncoder does not support tensor other_tensor than 1 dim")
 
         m = np.zeros(len(self.label) * u.size).reshape((u.size, len(self.label)))
         i = 0
